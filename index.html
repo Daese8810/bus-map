@@ -36,18 +36,27 @@
   transition: transform 0.2s linear;
 }
 
-    .bus-label {
-      margin-top: 6px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid #CBEFD9;
-      color: #03C75A;
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    }
+.bus-marker-image {
+  width: 44px;
+  height: 44px;
+  display: block;
+  transform-origin: center center;
+  transition: transform 0.2s linear;
+  will-change: transform;
+}
+
+.bus-label {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #CBEFD9;
+  color: #03C75A;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
   </style>
 
   <script>
@@ -99,7 +108,7 @@ let prevAngle = null;
         icon: {
           content:
            '<div class="bus-marker-wrap">' +
-  '<div id="busMarkerIcon" class="bus-marker">🚌</div>' +
+'<img id="busMarkerIcon" class="bus-marker-image" src="bus_marker.png" alt="bus" />' +
   '<div id="busLabel" class="bus-label">셔틀버스</div>' +
 '</div>',
           size: new naver.maps.Size(72, 90),
