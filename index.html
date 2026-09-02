@@ -74,6 +74,25 @@ let marker = null;
 let currentLatLng = null;
 let animationFrameId = null;
 let followVehicle = true;
+let pendingVehicleUpdate = null;
+
+function isAllowedParentOrigin(origin) {
+  try {
+    const url = new URL(origin);
+    return url.protocol === 'https:' && (
+      url.hostname === 'script.google.com' ||
+      url.hostname.endsWith('-script.googleusercontent.com')
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
+function notifyParentMapReady() {
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'daese-bus-map-ready' }, '*');
+  }
+}
 
     function initMap() {
       const defaultCenter = new naver.maps.LatLng(37.5666102, 126.9783881);
@@ -111,6 +130,19 @@ content:
       if (window.NaverMapBridge) {
         window.NaverMapBridge.postMessage('map_ready');
       }
+
+      if (pendingVehicleUpdate) {
+        const pending = pendingVehicleUpdate;
+        pendingVehicleUpdate = null;
+        updateVehicle(
+          pending.latitude,
+          pending.longitude,
+          pending.label,
+          pending.follow
+        );
+      }
+
+      notifyParentMapReady();
     }
 
     function updateBusLabel(label) {
@@ -149,13 +181,33 @@ function centerVehicle() {
 }
 
 function updateVehicle(lat, lng, label, follow) {
-  if (!map || !marker) return;
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < -90 || latitude > 90 ||
+    longitude < -180 || longitude > 180
+  ) {
+    return;
+  }
+
+  if (!map || !marker) {
+    pendingVehicleUpdate = {
+      latitude,
+      longitude,
+      label: String(label || '셔틀버스').slice(0, 80),
+      follow: typeof follow === 'boolean' ? follow : true
+    };
+    return;
+  }
 
   if (typeof follow === 'boolean') {
     followVehicle = follow;
   }
 
-  const target = new naver.maps.LatLng(lat, lng);
+  const target = new naver.maps.LatLng(latitude, longitude);
   updateBusLabel(label);
 
   // 첫 위치 진입
@@ -225,6 +277,20 @@ function animate(now) {
 
 animationFrameId = requestAnimationFrame(animate);
 }
+
+window.addEventListener('message', function(event) {
+  if (!isAllowedParentOrigin(event.origin)) return;
+
+  const data = event.data;
+  if (!data || data.type !== 'daese-bus-location') return;
+
+  updateVehicle(
+    data.latitude,
+    data.longitude,
+    data.label,
+    typeof data.follow === 'boolean' ? data.follow : true
+  );
+});
 </script>
 </body>
 </html>
